@@ -114,9 +114,9 @@ Este proyecto fue desarrollado como parte del curso:
 
 ## 👤 Autor
 
-- **Estudiante:** [Tu Nombre]
+- **Estudiante:** Jose Miguel Silva Diaz
 - **Código:** 220501096
-- **Programa:** [Tu Programa de Estudio]
+- **Programa:** Desarrolo de software
 
 ## 📄 Licencia
 
