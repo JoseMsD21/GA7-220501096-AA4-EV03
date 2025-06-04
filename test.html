@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prueba Servicio Autenticación</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        h2 {
+            color: #2c3e50;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 5px;
+        }
+        input, textarea {
+            width: 100%;
+            padding: 12px;
+            margin: 8px 0;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #3498db;
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .response {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 10px 0;
+            white-space: pre-wrap;
+            font-family: monospace;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔐 Prueba del Servicio de Autenticación</h1>
+    
+    <!-- Sección de Registro -->
+    <div class="container">
+        <h2>📝 Registro de Usuario</h2>
+        <div class="form-group">
+            <label for="regUsuario">Usuario:</label>
+            <input type="text" id="regUsuario" placeholder="juan123">
+        </div>
+        <div class="form-group">
+            <label for="regEmail">Email:</label>
+            <input type="email" id="regEmail" placeholder="juan@email.com">
+        </div>
+        <div class="form-group">
+            <label for="regPassword">Contraseña:</label>
+            <input type="password" id="regPassword" placeholder="miPassword123">
+        </div>
+        <button onclick="registrarUsuario()">Registrar Usuario</button>
+        <div id="respuestaRegistro"></div>
+    </div>
+
+    <!-- Sección de Login -->
+    <div class="container">
+        <h2>🔑 Inicio de Sesión</h2>
+        <div class="form-group">
+            <label for="loginUsuario">Usuario/Email:</label>
+            <input type="text" id="loginUsuario" placeholder="juan123 o juan@email.com">
+        </div>
+        <div class="form-group">
+            <label for="loginPassword">Contraseña:</label>
+            <input type="password" id="loginPassword" placeholder="miPassword123">
+        </div>
+        <button onclick="iniciarSesion()">Iniciar Sesión</button>
+        <div id="respuestaLogin"></div>
+    </div>
+
+    <!-- Sección de Verificación de Token -->
+    <div class="container">
+        <h2>🛡️ Verificar Token</h2>
+        <div class="form-group">
+            <label for="token">Token JWT:</label>
+            <textarea id="token" rows="3" placeholder="Pega aquí el token que obtuviste del login"></textarea>
+        </div>
+        <button onclick="verificarToken()">Verificar Token</button>
+        <div id="respuestaToken"></div>
+    </div>
+
+    <!-- Sección de Lista de Usuarios -->
+    <div class="container">
+        <h2>👥 Lista de Usuarios</h2>
+        <button onclick="listarUsuarios()">Obtener Lista de Usuarios</button>
+        <div id="respuestaUsuarios"></div>
+    </div>
+
+    <!-- Sección de Prueba Automática -->
+    <div class="container">
+        <h2>🧪 Prueba Automática Completa</h2>
+        <button onclick="pruebaCompleta()">Ejecutar Prueba Completa</button>
+        <div id="respuestaPruebaCompleta"></div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:3000/api';
+        let tokenGuardado = '';
+
+        // Función para mostrar respuestas
+        function mostrarRespuesta(elementId, data, esError = false) {
+            const elemento = document.getElementById(elementId);
+            const clase = esError ? 'error' : 'success';
+            elemento.innerHTML = `
+                <div class="${clase}">
+                    ${esError ? '❌ Error:' : '✅ Éxito:'} ${data.message || 'Operación completada'}
+                </div>
+                <div class="response">${JSON.stringify(data, null, 2)}</div>
+            `;
+        }
+
+        // Función de registro
+        async function registrarUsuario() {
+            const usuario = document.getElementById('regUsuario').value;
+            const email = document.getElementById('regEmail').value;
+            const password = document.getElementById('regPassword').value;
+
+            if (!usuario || !email || !password) {
+                mostrarRespuesta('respuestaRegistro', {message: 'Todos los campos son requeridos'}, true);
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/registro`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ usuario, email, password })
+                });
+
+                const data = await response.json();
+                mostrarRespuesta('respuestaRegistro', data, !response.ok);
+            } catch (error) {
+                mostrarRespuesta('respuestaRegistro', {message: 'Error de conexión: ' + error.message}, true);
+            }
+        }
+
+        // Función de login
+        async function iniciarSesion() {
+            const usuario = document.getElementById('loginUsuario').value;
+            const password = document.getElementById('loginPassword').value;
+
+            if (!usuario || !password) {
+                mostrarRespuesta('respuestaLogin', {message: 'Usuario y contraseña son requeridos'}, true);
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ usuario, password })
+                });
+
+                const data = await response.json();
+                
+                if (response.ok && data.data && data.data.token) {
+                    tokenGuardado = data.data.token;
+                    document.getElementById('token').value = tokenGuardado;
+                }
+                
+                mostrarRespuesta('respuestaLogin', data, !response.ok);
+            } catch (error) {
+                mostrarRespuesta('respuestaLogin', {message: 'Error de conexión: ' + error.message}, true);
+            }
+        }
+
+        // Función de verificación de token
+        async function verificarToken() {
+            const token = document.getElementById('token').value || tokenGuardado;
+
+            if (!token) {
+                mostrarRespuesta('respuestaToken', {message: 'Token es requerido'}, true);
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/verificar-token`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                const data = await response.json();
+                mostrarRespuesta('respuestaToken', data, !response.ok);
+            } catch (error) {
+                mostrarRespuesta('respuestaToken', {message: 'Error de conexión: ' + error.message}, true);
+            }
+        }
+
+        // Función para listar usuarios
+        async function listarUsuarios() {
+            try {
+                const response = await fetch(`${API_BASE}/usuarios`);
+                const data = await response.json();
+                mostrarRespuesta('respuestaUsuarios', data, !response.ok);
+            } catch (error) {
+                mostrarRespuesta('respuestaUsuarios', {message: 'Error de conexión: ' + error.message}, true);
+            }
+        }
+
+        // Función de prueba completa
+        async function pruebaCompleta() {
+            const respuestaElement = document.getElementById('respuestaPruebaCompleta');
+            respuestaElement.innerHTML = '<div class="response">🧪 Iniciando prueba completa...</div>';
+
+            const usuario = 'testuser' + Date.now();
+            const email = usuario + '@test.com';
+            const password = 'TestPass123';
+
+            try {
+                // 1. Registro
+                respuestaElement.innerHTML += '<div class="response">1️⃣ Registrando usuario...</div>';
+                const regResponse = await fetch(`${API_BASE}/registro`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ usuario, email, password })
+                });
+                const regData = await regResponse.json();
+                
+                if (!regResponse.ok) {
+                    throw new Error('Error en registro: ' + regData.message);
+                }
+
+                // 2. Login
+                respuestaElement.innerHTML += '<div class="response">2️⃣ Iniciando sesión...</div>';
+                const loginResponse = await fetch(`${API_BASE}/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ usuario, password })
+                });
+                const loginData = await loginResponse.json();
+                
+                if (!loginResponse.ok) {
+                    throw new Error('Error en login: ' + loginData.message);
+                }
+
+                const token = loginData.data.token;
+
+                // 3. Verificar token
+                respuestaElement.innerHTML += '<div class="response">3️⃣ Verificando token...</div>';
+                const tokenResponse = await fetch(`${API_BASE}/verificar-token`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const tokenData = await tokenResponse.json();
+
+                if (!tokenResponse.ok) {
+                    throw new Error('Error verificando token: ' + tokenData.message);
+                }
+
+                // 4. Listar usuarios
+                respuestaElement.innerHTML += '<div class="response">4️⃣ Listando usuarios...</div>';
+                const usuariosResponse = await fetch(`${API_BASE}/usuarios`);
+                const usuariosData = await usuariosResponse.json();
+
+                // Resultado final
+                respuestaElement.innerHTML += `
+                    <div class="success">
+                        ✅ ¡Prueba completa exitosa!
+                        <br>✓ Registro: OK
+                        <br>✓ Login: OK  
+                        <br>✓ Token: OK
+                        <br>✓ Lista usuarios: OK
+                    </div>
+                    <div class="response">Datos del usuario creado:
+${JSON.stringify(regData, null, 2)}
+
+Token generado:
+${token}
+
+Verificación del token:
+${JSON.stringify(tokenData, null, 2)}</div>
+                `;
+
+            } catch (error) {
+                respuestaElement.innerHTML += `
+                    <div class="error">
+                        ❌ Error en prueba completa: ${error.message}
+                    </div>
+                `;
+            }
+        }
+
+        // Mensaje inicial
+        window.onload = function() {
+            console.log('🔐 Página de pruebas cargada');
+            console.log('📝 Asegúrate de que el servidor esté corriendo en http://localhost:3000');
+        }
+    </script>
+</body>
+</html>
